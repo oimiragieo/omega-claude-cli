@@ -1,0 +1,20 @@
+{
+  "name": "omega-claude-cli",
+  "version": "2.0.0",
+  "description": "Portable Agent Skill for headless Claude Code CLI (Codex, Cursor, VS Code, Antigravity)",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "node --test tests/shell-escape.test.mjs tests/ask-claude.test.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.15.0",
+    "eslint": "^9.15.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.3.3"
+  }
+}

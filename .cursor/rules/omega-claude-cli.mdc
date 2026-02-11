@@ -1,0 +1,27 @@
+---
+description: When to use omega-claude-cli (headless Claude) and how to run it
+alwaysApply: true
+---
+
+# Omega Claude CLI (headless)
+
+When the user wants to **use Claude** (Claude Code CLI) for analysis or brainstorming from another agent, use the **omega-claude-cli** skill and run the **headless script** (no MCP).
+
+## When to use
+
+- User says "use Claude", "ask Claude", "analyze with Claude", "brainstorm with Claude", or similar.
+- Task benefits from Claude's context or a second model's perspective.
+
+## How to run Claude
+
+From the project root (where `.claude` lives), run:
+
+```bash
+node .claude/skills/omega-claude-cli/scripts/ask-claude.mjs "PROMPT"
+```
+
+Optional: add `--model sonnet` or `--model haiku` (CLI has 3 models: Default/Opus 4.6, Sonnet 4.5, Haiku 4.5) or `--json`. Build the prompt from the user's request and any @ file refs. Return the script's stdout as Claude's response.
+
+## If Claude Code CLI is not set up
+
+If the script fails (e.g. "claude not found"), suggest the user run **/omega-claude-setup** and complete Node + Claude Code CLI install and one-time auth. See .claude/skills/omega-claude-cli/references/installation.md and references/auth.md.

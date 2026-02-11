@@ -1,0 +1,21 @@
+---
+description: Headless script usage for omega-claude-cli (ask-claude.mjs)
+globs: "**/*.{ts,js,py,md,json}"
+alwaysApply: false
+---
+
+# Omega Claude headless script
+
+When the user wants Claude's analysis, use the **headless script** (no MCP):
+
+```bash
+node .claude/skills/omega-claude-cli/scripts/ask-claude.mjs "PROMPT" [--model sonnet|haiku] [--json]
+```
+
+- **PROMPT** — Required. The request to send to Claude; include @ file refs or context as needed.
+- **--model** / **-m** — Optional. CLI has 3 models: Default (Opus 4.6), Sonnet 4.5, Haiku 4.5. Use `sonnet` or `haiku` to override.
+- **--json** — Optional. Output JSON; script prints the `.response` field if present.
+
+Stdin: `echo "prompt" | node .claude/skills/omega-claude-cli/scripts/ask-claude.mjs`
+
+Full reference: `.claude/skills/omega-claude-cli/references/headless.md`
