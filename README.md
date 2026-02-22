@@ -47,7 +47,7 @@ From the **project root**, run the headless script with a prompt. In Claude use 
 **Script (all surfaces):** The Claude Code CLI has three models: **Default** (Opus 4.6), **Sonnet** (4.5), **Haiku** (4.5). Omit `--model` for default, or use e.g. `--model sonnet` or `--model haiku`.
 
 ```bash
-node .claude/skills/omega-claude-cli/scripts/ask-claude.mjs "PROMPT" [--model sonnet|haiku] [--json] [--sandbox] [--timeout-ms 120000]
+node .claude/skills/omega-claude-cli/scripts/ask-claude.mjs "PROMPT" [--model opus|sonnet|haiku] [--json] [--sandbox] [--timeout-ms 120000]
 ```
 
 ### Analyze
@@ -81,6 +81,7 @@ node .claude/skills/omega-claude-cli/scripts/ask-claude.mjs "Run a simple Python
 ```
 
 Add `--json` for machine-readable output and `--timeout-ms` to cap runtime for automation. See [references/headless.md](.claude/skills/omega-claude-cli/references/headless.md).
+Timeouts exit with code `124`.
 
 ## Headless CLI verification
 

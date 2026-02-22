@@ -34,6 +34,7 @@ Options:
 - `--json` — output as JSON (script prints the `.response` field if present)
 - `--sandbox` — run the prompt in Claude sandbox mode
 - `--timeout-ms N` — fail fast in automation if Claude takes too long
+- Exit codes: `0` success, `1` error, `124` timeout
 
 ### Stdin
 
@@ -43,12 +44,12 @@ echo "Explain this code" | node .claude/skills/omega-claude-cli/scripts/ask-clau
 
 ## Configuration options (CLI)
 
-| Option                           | Description                                | Example                                            |
-| -------------------------------- | ------------------------------------------ | -------------------------------------------------- |
-| `--prompt`, `-p`                 | Headless prompt                            | `claude -p "query"`                                |
-| `--dangerously-skip-permissions` | Non-interactive / YOLO                     | `claude -p "query" --dangerously-skip-permissions` |
-| `--model`                        | Model (sonnet, haiku; default is Opus 4.6) | `claude -p "query" --model sonnet`                 |
-| `--sandbox`                      | Sandbox mode for code execution/testing    | `claude -p "run this test" --sandbox`              |
+| Option                           | Description                             | Example                                            |
+| -------------------------------- | --------------------------------------- | -------------------------------------------------- |
+| `--prompt`, `-p`                 | Headless prompt                         | `claude -p "query"`                                |
+| `--dangerously-skip-permissions` | Non-interactive / YOLO                  | `claude -p "query" --dangerously-skip-permissions` |
+| `--model`                        | Model (`opus`, `sonnet`, `haiku`)       | `claude -p "query" --model sonnet`                 |
+| `--sandbox`                      | Sandbox mode for code execution/testing | `claude -p "run this test" --sandbox`              |
 
 ## Resources
 

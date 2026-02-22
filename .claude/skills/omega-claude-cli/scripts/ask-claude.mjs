@@ -9,75 +9,17 @@ import { spawn } from 'child_process';
 import path from 'path';
 import { createInterface } from 'readline';
 import { fileURLToPath } from 'url';
+import { assertNonEmptyPrompt, parseCliArgs } from './parse-args.mjs';
+import { extractJsonResponse } from './format-output.mjs';
 
 const USAGE =
-  'Usage: node ask-claude.mjs "prompt" [--model MODEL] [--json] [--sandbox] [--timeout-ms N]';
-
-export function parseCliArgs(argv) {
-  const opts = {
-    model: '',
-    outputJson: false,
-    sandbox: false,
-    timeoutMs: 0,
-    help: false,
-    prompt: '',
-  };
-
-  const promptParts = [];
-  let readPromptVerbatim = false;
-
-  for (let i = 0; i < argv.length; i++) {
-    const token = argv[i];
-
-    if (readPromptVerbatim) {
-      promptParts.push(token);
-      continue;
-    }
-
-    if (token === '--') {
-      readPromptVerbatim = true;
-      continue;
-    }
-    if (token === '--help' || token === '-h') {
-      opts.help = true;
-      continue;
-    }
-    if (token === '--json') {
-      opts.outputJson = true;
-      continue;
-    }
-    if (token === '--sandbox') {
-      opts.sandbox = true;
-      continue;
-    }
-    if (token === '--model' || token === '-m') {
-      const value = argv[i + 1];
-      if (!value || value.startsWith('-')) {
-        throw new Error('Missing value for --model');
-      }
-      opts.model = value;
-      i++;
-      continue;
-    }
-    if (token === '--timeout-ms') {
-      const value = argv[i + 1];
-      const parsed = Number.parseInt(value || '', 10);
-      if (!Number.isInteger(parsed) || parsed <= 0) {
-        throw new Error('Invalid value for --timeout-ms; expected a positive integer');
-      }
-      opts.timeoutMs = parsed;
-      i++;
-      continue;
-    }
-    if (token.startsWith('-')) {
-      throw new Error(`Unknown option: ${token}`);
-    }
-    promptParts.push(token);
-  }
-
-  opts.prompt = promptParts.join(' ').trim();
-  return opts;
-}
+  'Usage: node ask-claude.mjs "prompt" [--model MODEL] [--json] [--sandbox] [--timeout-ms N]\nExit codes: 0 success, 1 error, 124 timeout';
+const MAX_STDIN_BYTES_DEFAULT = 50 * 1024 * 1024;
+const MAX_STDIN_BYTES = Number.parseInt(process.env.ASK_CLAUDE_MAX_STDIN_BYTES || '', 10);
+const EFFECTIVE_MAX_STDIN_BYTES =
+  Number.isInteger(MAX_STDIN_BYTES) && MAX_STDIN_BYTES > 0
+    ? MAX_STDIN_BYTES
+    : MAX_STDIN_BYTES_DEFAULT;
 
 export function buildClaudeArgs({ prompt, model, outputJson, sandbox }) {
   const cliArgs = ['-p', prompt.trim(), '--dangerously-skip-permissions'];
@@ -130,6 +72,7 @@ function runCandidate(candidate, runOptions, timeoutMs) {
     let stderr = '';
     let timedOut = false;
     let timer = null;
+    let killPromise = null;
     let settled = false;
 
     function finish(value) {
@@ -151,7 +94,17 @@ function runCandidate(candidate, runOptions, timeoutMs) {
     if (timeoutMs > 0) {
       timer = setTimeout(() => {
         timedOut = true;
-        proc.kill();
+        if (process.platform === 'win32') {
+          killPromise = new Promise((done) => {
+            const killer = spawn('taskkill', ['/F', '/T', '/PID', String(proc.pid)], {
+              stdio: 'ignore',
+            });
+            killer.on('error', () => done());
+            killer.on('close', () => done());
+          });
+        } else {
+          proc.kill('SIGKILL');
+        }
       }, timeoutMs);
     }
 
@@ -172,6 +125,12 @@ function runCandidate(candidate, runOptions, timeoutMs) {
 
     proc.on('close', (code) => {
       if (timer) clearTimeout(timer);
+      if (killPromise) {
+        killPromise.finally(() => {
+          finish({ code: code ?? 1, stdout, stderr, timedOut });
+        });
+        return;
+      }
       finish({ code: code ?? 1, stdout, stderr, timedOut });
     });
   });
@@ -194,21 +153,12 @@ async function runWithFallback(candidates, runOptions, timeoutMs) {
   return { code: 1, stdout: '', stderr: 'Claude Code CLI not found on PATH.', timedOut: false };
 }
 
-export function extractJsonResponse(stdout) {
-  const parsed = JSON.parse(stdout);
-  if (parsed && typeof parsed === 'object' && 'response' in parsed) {
-    return String(parsed.response ?? '');
-  }
-  return stdout;
-}
-
 function printFailure(stderr, stdout, timedOut) {
-  const combined = (stderr || stdout || '').trim();
+  const combined = [stderr, stdout].filter(Boolean).join('\n').trim();
   if (timedOut) {
-    console.error(
-      combined ||
-        'Claude request timed out. Try a shorter prompt or set a larger timeout with --timeout-ms.'
-    );
+    const msg =
+      'Claude request timed out. Try a shorter prompt or set a larger timeout with --timeout-ms.';
+    console.error(combined ? `${msg}\n\nPartial Output:\n${combined}` : msg);
     return;
   }
   console.error(combined);
@@ -221,7 +171,9 @@ function printFailure(stderr, stdout, timedOut) {
 }
 
 async function run(promptText, opts) {
-  if (!promptText || !promptText.trim()) {
+  try {
+    assertNonEmptyPrompt(promptText);
+  } catch {
     console.error(USAGE);
     process.exit(1);
   }
@@ -234,7 +186,6 @@ async function run(promptText, opts) {
   });
   const runOptions = {
     stdio: ['ignore', 'pipe', 'pipe'],
-    env: process.env,
     shell: false,
   };
   const candidates = getExecutables(cliArgs, process.platform === 'win32');
@@ -290,9 +241,32 @@ async function main() {
 
   const rl = createInterface({ input: process.stdin });
   const lines = [];
-  rl.on('line', (line) => lines.push(line));
+  let stdinBytes = 0;
+  let stdinLimitExceeded = false;
+  rl.on('line', (line) => {
+    lines.push(line);
+    if (stdinLimitExceeded) return;
+    stdinBytes += Buffer.byteLength(line, 'utf8');
+    if (lines.length > 1) stdinBytes += 1;
+    if (stdinBytes > EFFECTIVE_MAX_STDIN_BYTES) {
+      stdinLimitExceeded = true;
+      rl.close();
+    }
+  });
   rl.on('close', async () => {
-    await run(lines.join('\n'), opts);
+    if (stdinLimitExceeded) {
+      console.error(
+        `Input from stdin exceeds ${(EFFECTIVE_MAX_STDIN_BYTES / (1024 * 1024)).toFixed(1)} MB limit. Provide a shorter prompt.`
+      );
+      process.exit(1);
+      return;
+    }
+    try {
+      await run(lines.join('\n'), opts);
+    } catch (err) {
+      console.error(err && err.message ? err.message : String(err));
+      process.exit(1);
+    }
   });
 }
 
