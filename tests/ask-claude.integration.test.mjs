@@ -27,6 +27,8 @@ if (mode === 'json') {
   process.stdout.write(JSON.stringify({ response: 'stub response' }));
 } else if (mode === 'invalid-json') {
   process.stdout.write('not-json');
+} else if (mode === 'json-missing-response') {
+  process.stdout.write(JSON.stringify({ ok: true }));
 } else if (mode === 'error') {
   process.stderr.write('stub failure');
   process.exit(2);
@@ -91,6 +93,13 @@ describe('ask-claude integration', () => {
 
     assert.equal(result.status, 1);
     assert.match(result.stderr, /Warning: Claude did not return valid JSON/);
+  });
+
+  it('returns warning and non-zero exit when json lacks response field in --json mode', () => {
+    const result = runAskClaude(['--json', 'prompt text'], 'json-missing-response');
+
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /missing required \.response field/i);
   });
 
   it('propagates claude non-zero exit and stderr', () => {

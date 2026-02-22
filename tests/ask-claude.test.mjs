@@ -64,8 +64,13 @@ describe('parseCliArgs', () => {
   it('throws on invalid model value', () => {
     assert.throws(
       () => parseCliArgs(['--model', 'gpt5']),
-      /Invalid value for --model; expected one of: opus, sonnet, haiku/
+      /Invalid value for --model; expected one of: opus, sonnet, haiku, or a full claude-\* model id/
     );
+  });
+
+  it('accepts full claude model id', () => {
+    const opts = parseCliArgs(['--model', 'claude-sonnet-4-6', 'review this']);
+    assert.strictEqual(opts.model, 'claude-sonnet-4-6');
   });
 });
 
@@ -133,9 +138,11 @@ describe('extractJsonResponse', () => {
     assert.strictEqual(extractJsonResponse('{"response":"ok"}'), 'ok');
   });
 
-  it('returns input when no .response field is present', () => {
-    const raw = '{"foo":"bar"}';
-    assert.strictEqual(extractJsonResponse(raw), raw);
+  it('throws when no .response field is present', () => {
+    assert.throws(
+      () => extractJsonResponse('{"foo":"bar"}'),
+      /Claude JSON output missing required \.response field/
+    );
   });
 
   it('throws SyntaxError on invalid JSON', () => {

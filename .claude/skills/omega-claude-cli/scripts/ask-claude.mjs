@@ -15,13 +15,14 @@ import { extractJsonResponse } from './format-output.mjs';
 const USAGE =
   'Usage: node ask-claude.mjs "prompt" [--model MODEL] [--json] [--sandbox] [--timeout-ms N]\nExit codes: 0 success, 1 error, 124 timeout';
 const MAX_STDIN_BYTES_DEFAULT = 50 * 1024 * 1024;
-const MAX_STDIN_BYTES = Number.parseInt(process.env.ASK_CLAUDE_MAX_STDIN_BYTES || '', 10);
+const MAX_STDIN_BYTES = Number.parseInt(process.env.ASK_CLAUDE_MAX_STDIN_BYTES, 10);
 const EFFECTIVE_MAX_STDIN_BYTES =
   Number.isInteger(MAX_STDIN_BYTES) && MAX_STDIN_BYTES > 0
     ? MAX_STDIN_BYTES
     : MAX_STDIN_BYTES_DEFAULT;
 
 export function buildClaudeArgs({ prompt, model, outputJson, sandbox }) {
+  // Required for non-interactive/headless execution.
   const cliArgs = ['-p', prompt.trim(), '--dangerously-skip-permissions'];
   if (sandbox) cliArgs.push('--sandbox');
   if (model) cliArgs.push('--model', model);
@@ -96,6 +97,10 @@ function runCandidate(candidate, runOptions, timeoutMs) {
         timedOut = true;
         if (process.platform === 'win32') {
           killPromise = new Promise((done) => {
+            if (!proc.pid) {
+              done();
+              return;
+            }
             const killer = spawn('taskkill', ['/F', '/T', '/PID', String(proc.pid)], {
               stdio: 'ignore',
             });
@@ -140,7 +145,7 @@ async function runWithFallback(candidates, runOptions, timeoutMs) {
   for (const candidate of candidates) {
     const result = await runCandidate(candidate, runOptions, timeoutMs);
     if (result.enoent) continue;
-    const combined = `${result.stderr || ''}\n${result.stdout || ''}`;
+    const combined = [result.stderr, result.stdout].filter(Boolean).join('\n');
     if (
       result.code !== 0 &&
       candidate.notFoundPattern &&
@@ -243,15 +248,18 @@ async function main() {
   const lines = [];
   let stdinBytes = 0;
   let stdinLimitExceeded = false;
+  const newlineBytes = process.platform === 'win32' ? 2 : 1;
   rl.on('line', (line) => {
-    lines.push(line);
     if (stdinLimitExceeded) return;
-    stdinBytes += Buffer.byteLength(line, 'utf8');
-    if (lines.length > 1) stdinBytes += 1;
-    if (stdinBytes > EFFECTIVE_MAX_STDIN_BYTES) {
+    const separatorBytes = lines.length > 0 ? newlineBytes : 0;
+    const nextBytes = stdinBytes + separatorBytes + Buffer.byteLength(line, 'utf8');
+    if (nextBytes > EFFECTIVE_MAX_STDIN_BYTES) {
       stdinLimitExceeded = true;
       rl.close();
+      return;
     }
+    stdinBytes = nextBytes;
+    lines.push(line);
   });
   rl.on('close', async () => {
     if (stdinLimitExceeded) {
@@ -261,12 +269,7 @@ async function main() {
       process.exit(1);
       return;
     }
-    try {
-      await run(lines.join('\n'), opts);
-    } catch (err) {
-      console.error(err && err.message ? err.message : String(err));
-      process.exit(1);
-    }
+    await run(lines.join('\n'), opts);
   });
 }
 

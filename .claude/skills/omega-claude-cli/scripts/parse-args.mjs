@@ -4,6 +4,7 @@
  * Exported for unit testing without spawning a process.
  */
 const VALID_MODELS = new Set(['sonnet', 'haiku', 'opus']);
+const FULL_MODEL_ID_PATTERN = /^claude-(opus|sonnet|haiku)(-[a-z0-9.]+)*$/;
 
 export function assertNonEmptyPrompt(prompt) {
   if (!prompt || !prompt.trim()) {
@@ -61,8 +62,10 @@ export function parseCliArgs(argv) {
         throw new Error('Missing value for --model');
       }
       const normalized = value.toLowerCase();
-      if (!VALID_MODELS.has(normalized)) {
-        throw new Error('Invalid value for --model; expected one of: opus, sonnet, haiku');
+      if (!VALID_MODELS.has(normalized) && !FULL_MODEL_ID_PATTERN.test(normalized)) {
+        throw new Error(
+          'Invalid value for --model; expected one of: opus, sonnet, haiku, or a full claude-* model id'
+        );
       }
       opts.model = normalized;
       i++;
