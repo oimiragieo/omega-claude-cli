@@ -9,12 +9,14 @@ alwaysApply: false
 When the user wants Claude's analysis, use the **headless script** (no MCP):
 
 ```bash
-node .claude/skills/omega-claude-cli/scripts/ask-claude.mjs "PROMPT" [--model sonnet|haiku] [--json]
+node .claude/skills/omega-claude-cli/scripts/ask-claude.mjs "PROMPT" [--model sonnet|haiku] [--json] [--sandbox] [--timeout-ms N]
 ```
 
 - **PROMPT** — Required. The request to send to Claude; include @ file refs or context as needed.
 - **--model** / **-m** — Optional. CLI has 3 models: Default (Opus 4.6), Sonnet 4.5, Haiku 4.5. Use `sonnet` or `haiku` to override.
 - **--json** — Optional. Output JSON; script prints the `.response` field if present.
+- **--sandbox** — Optional. Run or test code in Claude's sandbox.
+- **--timeout-ms N** — Optional. Timeout in ms for automation (positive integer).
 
 Stdin: `echo "prompt" | node .claude/skills/omega-claude-cli/scripts/ask-claude.mjs`
 

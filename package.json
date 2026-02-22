@@ -9,7 +9,9 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "node --test tests/shell-escape.test.mjs tests/ask-claude.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "test:ci": "npm run test && npm run lint && npm run format:check && npm run changelog:check",
+    "changelog:check": "node scripts/check-changelog.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",

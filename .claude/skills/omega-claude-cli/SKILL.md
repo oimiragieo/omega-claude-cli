@@ -59,6 +59,11 @@ Natural language: "use Claude to explain index.html", "ask Claude for feedback o
 
 One-time sign-in and auth issues: [references/auth.md](references/auth.md).
 
+## Failure handling
+
+- If shell execution is unavailable in the host agent (for example `@lydell/node-pty` missing binary errors), report that the Claude call is blocked by runtime setup.
+- Do not present fabricated Claude output. Return the real error and troubleshooting steps instead.
+
 ## Copy and run in another project
 
 Copy the **entire** `.claude` folder (so you have `.claude/skills/omega-claude-cli/` and `.claude/commands/`) into the target project. Open that project in your agent and run from its root. Run **/omega-claude-setup** once, then "ask Claude" works. Details: [references/copy-and-run.md](references/copy-and-run.md).
