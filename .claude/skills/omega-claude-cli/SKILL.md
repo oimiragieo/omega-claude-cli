@@ -16,7 +16,30 @@ Run Claude via the headless script: [scripts/ask-claude.mjs](./scripts/ask-claud
 
 If the user has not set up Claude Code CLI yet, direct them to run **/omega-claude-setup**. That runs the verification script (`node .claude/skills/omega-claude-cli/scripts/verify-setup.mjs`) and guides them to install Node, install Claude Code CLI, and complete one-time auth. No MCP config is needed.
 
-## How to run Claude (headless)
+## ⚠️ RULE: Running inside Claude Code (nested session)
+
+**If the host agent IS Claude Code** (i.e. `$CLAUDECODE` is set), do NOT use `ask-claude.mjs` — it will fail with:
+
+> `Claude Code cannot be launched inside another Claude Code session.`
+
+This happens because `ask-claude.mjs` spawns a child process that inherits the `CLAUDECODE` env var. Use the direct CLI pattern instead:
+
+```bash
+OUT=/tmp/claude_ask_$$.txt
+ERR=/tmp/claude_err_$$.txt
+env -u CLAUDECODE claude --dangerously-skip-permissions -p "PROMPT" > "$OUT" 2>"$ERR" &
+wait $!
+cat "$OUT"
+```
+
+- `env -u CLAUDECODE` fully removes the variable so the child session starts clean.
+- Background (`&`) + `wait` is required — foreground Claude CLI processes do not produce output when called from inside the Bash tool.
+- Always use a unique temp file (`$$` = PID) to avoid collisions.
+- Check `$ERR` if output is empty.
+
+**Other agents (Codex, Cursor, Copilot, etc.) are NOT affected** — they don't set `CLAUDECODE`, so they use `ask-claude.mjs` as normal (see below).
+
+## How to run Claude (headless) — for non-Claude agents
 
 From the project root (where `.claude` lives), run:
 

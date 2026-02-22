@@ -10,6 +10,24 @@ Headless mode:
 - Returns text or JSON
 - Works in automation and with the scripts in this skill
 
+## ⚠️ Nested session rule (Claude Code as host agent)
+
+If you are running **inside Claude Code** (`$CLAUDECODE` is set), `ask-claude.mjs` will fail:
+
+> `Claude Code cannot be launched inside another Claude Code session.`
+
+Use the direct CLI pattern instead — it fully strips `CLAUDECODE` and runs in background:
+
+```bash
+OUT=/tmp/claude_ask_$$.txt
+ERR=/tmp/claude_err_$$.txt
+env -u CLAUDECODE claude --dangerously-skip-permissions -p "PROMPT" > "$OUT" 2>"$ERR" &
+wait $!
+cat "$OUT"
+```
+
+Other agents (Codex, Cursor, Copilot, etc.) don't set `CLAUDECODE`, so they use `ask-claude.mjs` as normal.
+
 ## Basic usage
 
 ### Direct prompt
@@ -18,7 +36,7 @@ Headless mode:
 claude -p "What is machine learning?" --dangerously-skip-permissions
 ```
 
-### With our script (no MCP)
+### With our script (no MCP — for non-Claude agents)
 
 From the project root (where `.claude` lives):
 
