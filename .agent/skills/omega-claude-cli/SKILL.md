@@ -13,6 +13,6 @@ From the **project root**, run:
 node .claude/skills/omega-claude-cli/scripts/ask-claude.mjs "USER_PROMPT"
 ```
 
-Optional: `--model sonnet` or `--model haiku` (CLI has 3 models: Default/Opus 4.6, Sonnet 4.5, Haiku 4.5), `--json`, `--sandbox`, `--timeout-ms N`. Build the prompt from the user's request and any @ file refs; return the script output.
+Optional: `--model opus|sonnet|haiku|fable|best|opusplan|sonnet[1m]|opus[1m]`, `--json`, `--sandbox`, `--timeout-ms N`. Build the prompt from the user's request and any @ file refs; return the script output.
 
 If the script fails, run `node .claude/skills/omega-claude-cli/scripts/verify-setup.mjs` and see references/installation.md and references/auth.md. Scripts are shared at `.claude/skills/omega-claude-cli/scripts/`.

@@ -12,34 +12,13 @@ This skill uses the **Claude Code CLI in headless mode** so other agents (Codex,
 
 Run Claude via the headless script: [scripts/ask-claude.mjs](./scripts/ask-claude.mjs) (from the skill root) or `.claude/skills/omega-claude-cli/scripts/ask-claude.mjs` (from the project root). It invokes `claude -p "..." --dangerously-skip-permissions` (and optional `--model`, `--json`, `--sandbox`, `--timeout-ms`) and returns the response. Requires **Node.js** and the **Claude Code CLI** to be installed. For one-time setup after copying this folder, run **/omega-claude-setup**. For install and auth, see [references/installation.md](references/installation.md) and [references/auth.md](references/auth.md).
 
+The wrapper strips `CLAUDECODE` from the child process environment, so it also works when invoked from inside an active Claude Code session.
+
 ## First-time setup
 
 If the user has not set up Claude Code CLI yet, direct them to run **/omega-claude-setup**. That runs the verification script (`node .claude/skills/omega-claude-cli/scripts/verify-setup.mjs`) and guides them to install Node, install Claude Code CLI, and complete one-time auth. No MCP config is needed.
 
-## ⚠️ RULE: Running inside Claude Code (nested session)
-
-**If the host agent IS Claude Code** (i.e. `$CLAUDECODE` is set), do NOT use `ask-claude.mjs` — it will fail with:
-
-> `Claude Code cannot be launched inside another Claude Code session.`
-
-This happens because `ask-claude.mjs` spawns a child process that inherits the `CLAUDECODE` env var. Use the direct CLI pattern instead:
-
-```bash
-OUT=/tmp/claude_ask_$$.txt
-ERR=/tmp/claude_err_$$.txt
-env -u CLAUDECODE claude --dangerously-skip-permissions -p "PROMPT" > "$OUT" 2>"$ERR" &
-wait $!
-cat "$OUT"
-```
-
-- `env -u CLAUDECODE` fully removes the variable so the child session starts clean.
-- Background (`&`) + `wait` is required — foreground Claude CLI processes do not produce output when called from inside the Bash tool.
-- Always use a unique temp file (`$$` = PID) to avoid collisions.
-- Check `$ERR` if output is empty.
-
-**Other agents (Codex, Cursor, Copilot, etc.) are NOT affected** — they don't set `CLAUDECODE`, so they use `ask-claude.mjs` as normal (see below).
-
-## How to run Claude (headless) — for non-Claude agents
+## How to run Claude (headless)
 
 From the project root (where `.claude` lives), run:
 
@@ -49,8 +28,8 @@ node .claude/skills/omega-claude-cli/scripts/ask-claude.mjs "USER_PROMPT"
 
 Options (append to the command):
 
-- `--model MODEL` — optional. CLI has three models: Default (Opus 4.6), Sonnet 4.5, Haiku 4.5. Use e.g. `--model sonnet` or `--model haiku`.
-- `--json` — output JSON; the script prints the `.response` field if present.
+- `--model MODEL` — optional. CLI aliases: `opus` (4.8), `sonnet` (4.6), `haiku` (4.5), `fable` (5), `best`, `opusplan`, `sonnet[1m]`, `opus[1m]`, or a full `claude-*` model ID. Omit to use your account's CLI default.
+- `--json` — output JSON from Claude CLI; the script prints the `.result` text field.
 - `--sandbox` — run or test code in Claude's sandbox mode.
 - `--timeout-ms N` — optional timeout for automation.
 

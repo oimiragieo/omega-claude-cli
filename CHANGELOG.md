@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+- **JSON output**: `format-output.mjs` now reads the Claude CLI `.result` field (current envelope) with legacy `.response` fallback.
+- **Model aliases**: `parse-args.mjs` accepts `fable`, `best`, `opusplan`, `default`, `sonnet[1m]`, `opus[1m]`, and `claude-fable-*` model IDs.
+- **Nested sessions**: `ask-claude.mjs` strips `CLAUDECODE` from the child process environment so headless calls work from inside Claude Code.
+- **Docs**: Updated README, skill, headless reference, Cursor rules, and slash commands for current model aliases (Opus 4.8, Sonnet 4.6, Fable 5).
+- **Tests**: Integration stubs use real CLI JSON shape; added coverage for new aliases, large prompts, and `CLAUDECODE` stripping.
+- **CLAUDE_CLI_DOCS**: Added snapshot README pointing to live docs for model/CLI truth.
+
 - **Code cleanup**: Removed `shell-escape.mjs` and `tests/shell-escape.test.mjs` — dead code never imported by `ask-claude.mjs`.
 - **New scripts**: `parse-args.mjs` (pure arg parser, exported for testing) and `format-output.mjs` (pure JSON extractor, exported for testing). Both split from `ask-claude.mjs` to enable isolated unit testing without spawning processes.
 - **Tests**: Added `tests/ask-claude.integration.test.mjs` to verify end-to-end `ask-claude.mjs` behavior with a stub Claude CLI (flag forwarding, JSON envelope behavior, warning on invalid JSON, and non-zero exit propagation).

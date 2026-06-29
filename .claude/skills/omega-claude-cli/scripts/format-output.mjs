@@ -6,19 +6,22 @@
 
 /**
  * Extract the response text from Claude CLI's JSON stdout.
- * If the output has a `.response` field, returns its string value.
- * Otherwise throws to signal unexpected JSON envelope.
+ * Prefers the `.result` field (current CLI envelope); falls back to legacy `.response`.
  *
  * @param {string} stdout - raw stdout from claude CLI (expected to be JSON when --json is used)
- * @returns {string} response text. Note: if .response is null, it returns an empty string.
+ * @returns {string} response text. Note: if the field is null, returns an empty string.
  * @throws {SyntaxError} if stdout is not valid JSON
- * @throws {Error} if stdout JSON has no .response field
+ * @throws {Error} if stdout JSON has neither .result nor .response
  */
 export function extractJsonResponse(stdout) {
   const parsed = JSON.parse(stdout);
-  if (parsed && typeof parsed === 'object' && 'response' in parsed) {
-    // String(null ?? '') is ''
-    return String(parsed.response ?? '');
+  if (parsed && typeof parsed === 'object') {
+    if ('result' in parsed) {
+      return String(parsed.result ?? '');
+    }
+    if ('response' in parsed) {
+      return String(parsed.response ?? '');
+    }
   }
-  throw new Error('Claude JSON output missing required .response field');
+  throw new Error('Claude JSON output missing required .result or .response field');
 }

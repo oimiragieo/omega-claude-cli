@@ -19,4 +19,4 @@ From the project root:
 node .claude/skills/omega-claude-cli/scripts/ask-claude.mjs "USER_PROMPT"
 ```
 
-Common options: `--model opus|sonnet|haiku`, `--json`, `--sandbox`, `--timeout-ms N`.
+Common options: `--model opus|sonnet|haiku|fable|best|opusplan|sonnet[1m]|opus[1m]`, `--json`, `--sandbox`, `--timeout-ms N`.

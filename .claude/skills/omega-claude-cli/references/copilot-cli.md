@@ -18,10 +18,10 @@ copilot -p "Your prompt here"
 
 ## Selecting a model
 
-Set **`COPILOT_MODEL`** (e.g. `claude-sonnet-4.5`, `gpt-5`, `claude-3-5-sonnet`). PowerShell:
+Set **`COPILOT_MODEL`** (e.g. `claude-sonnet-4-6`, `gpt-5`). PowerShell:
 
 ```powershell
-$env:COPILOT_MODEL="claude-sonnet-4.5"; copilot -p "Your prompt here"
+$env:COPILOT_MODEL="claude-sonnet-4-6"; copilot -p "Your prompt here"
 ```
 
 ## Relation to omega-claude-cli

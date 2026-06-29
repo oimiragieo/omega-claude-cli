@@ -3,8 +3,33 @@
  * Strict flag handling: throws on unknown options, missing values, and invalid types.
  * Exported for unit testing without spawning a process.
  */
-const VALID_MODELS = new Set(['sonnet', 'haiku', 'opus']);
-const FULL_MODEL_ID_PATTERN = /^claude-(opus|sonnet|haiku)(-[a-z0-9.]+)*$/;
+const VALID_ALIASES = new Set(['sonnet', 'haiku', 'opus', 'fable', 'best', 'opusplan', 'default']);
+const CONTEXT_SUFFIX = '[1m]';
+const CONTEXT_ALIAS_BASES = new Set(['sonnet', 'opus']);
+const FULL_MODEL_ID_PATTERN = /^claude-(opus|sonnet|haiku|fable)(-[a-z0-9.]+)*$/;
+
+/**
+ * @param {string} value
+ * @returns {string}
+ */
+export function normalizeModel(value) {
+  const normalized = value.toLowerCase();
+  if (VALID_ALIASES.has(normalized)) {
+    return normalized;
+  }
+  if (normalized.endsWith(CONTEXT_SUFFIX)) {
+    const base = normalized.slice(0, -CONTEXT_SUFFIX.length);
+    if (CONTEXT_ALIAS_BASES.has(base)) {
+      return normalized;
+    }
+  }
+  if (FULL_MODEL_ID_PATTERN.test(normalized)) {
+    return normalized;
+  }
+  throw new Error(
+    'Invalid value for --model; expected an alias (opus, sonnet, haiku, fable, best, opusplan, default, sonnet[1m], opus[1m]) or a full claude-* model id'
+  );
+}
 
 export function assertNonEmptyPrompt(prompt) {
   if (!prompt || !prompt.trim()) {
@@ -61,13 +86,7 @@ export function parseCliArgs(argv) {
       if (!value || value.startsWith('-')) {
         throw new Error('Missing value for --model');
       }
-      const normalized = value.toLowerCase();
-      if (!VALID_MODELS.has(normalized) && !FULL_MODEL_ID_PATTERN.test(normalized)) {
-        throw new Error(
-          'Invalid value for --model; expected one of: opus, sonnet, haiku, or a full claude-* model id'
-        );
-      }
-      opts.model = normalized;
+      opts.model = normalizeModel(value);
       i++;
       continue;
     }

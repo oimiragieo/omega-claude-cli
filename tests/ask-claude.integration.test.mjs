@@ -24,11 +24,15 @@ function makeClaudeStubDir() {
 const mode = process.env.CLAUDE_STUB_MODE || 'echo';
 const args = process.argv.slice(2);
 if (mode === 'json') {
-  process.stdout.write(JSON.stringify({ response: 'stub response' }));
+  process.stdout.write(JSON.stringify({ type: 'result', result: 'stub response' }));
+} else if (mode === 'legacy-json') {
+  process.stdout.write(JSON.stringify({ response: 'legacy response' }));
 } else if (mode === 'invalid-json') {
   process.stdout.write('not-json');
 } else if (mode === 'json-missing-response') {
   process.stdout.write(JSON.stringify({ ok: true }));
+} else if (mode === 'echo-claudecode') {
+  process.stdout.write(JSON.stringify({ claudecode: process.env.CLAUDECODE }));
 } else if (mode === 'error') {
   process.stderr.write('stub failure');
   process.exit(2);
@@ -95,11 +99,68 @@ describe('ask-claude integration', () => {
     assert.match(result.stderr, /Warning: Claude did not return valid JSON/);
   });
 
-  it('returns warning and non-zero exit when json lacks response field in --json mode', () => {
+  it('returns warning and non-zero exit when json lacks result field in --json mode', () => {
     const result = runAskClaude(['--json', 'prompt text'], 'json-missing-response');
 
     assert.equal(result.status, 1);
-    assert.match(result.stderr, /missing required \.response field/i);
+    assert.match(result.stderr, /missing required \.result or \.response field/i);
+  });
+
+  it('supports legacy json envelopes with .response', () => {
+    const result = runAskClaude(['--json', 'prompt text'], 'legacy-json');
+
+    assert.equal(result.status, 0);
+    assert.equal(result.stdout, 'legacy response');
+  });
+
+  it('forwards model aliases to claude', () => {
+    const result = runAskClaude(['--model', 'fable', 'hello world'], 'echo');
+
+    assert.equal(result.status, 0);
+    const parsed = JSON.parse(result.stdout);
+    assert.deepEqual(parsed.args, [
+      '-p',
+      'hello world',
+      '--dangerously-skip-permissions',
+      '--model',
+      'fable',
+    ]);
+  });
+
+  it('materializes large prompts and pipes them via stdin', () => {
+    const largePrompt = 'x'.repeat(7000);
+    const result = runAskClaude([largePrompt], 'echo');
+
+    assert.equal(result.status, 0);
+    const parsed = JSON.parse(result.stdout);
+    assert.deepEqual(parsed.args, [
+      '-p',
+      'Follow the instructions provided via stdin.',
+      '--dangerously-skip-permissions',
+    ]);
+  });
+
+  it('strips CLAUDECODE from the child process environment', () => {
+    const stubDir = makeClaudeStubDir();
+    const env = {
+      ...process.env,
+      CLAUDECODE: 'nested-session',
+      CLAUDE_STUB_MODE: 'echo-claudecode',
+      PATH: `${stubDir}${path.delimiter}${process.env.PATH || ''}`,
+    };
+
+    const result = spawnSync(process.execPath, [SCRIPT_PATH, 'hello world'], {
+      cwd: path.resolve('.'),
+      env,
+      encoding: 'utf8',
+      timeout: 10000,
+    });
+
+    rmSync(stubDir, { recursive: true, force: true });
+
+    assert.equal(result.status, 0);
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.claudecode, undefined);
   });
 
   it('propagates claude non-zero exit and stderr', () => {

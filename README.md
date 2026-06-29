@@ -28,8 +28,8 @@ A zero-dependency Node.js wrapper that lets any agent platform invoke **Claude C
 - **Headless execution** — runs `claude -p "…" --dangerously-skip-permissions` non-interactively
 - **Cross-platform** — Windows (`cmd.exe` wrapper) and Unix/macOS (direct spawn) handled automatically
 - **Automatic fallback** — tries global `claude` binary, falls back to `npx @anthropic-ai/claude-code` if not found
-- **Model selection** — Opus 4.6 (default), Sonnet 4.5, Haiku 4.5, or any full `claude-*` model ID
-- **JSON output** — machine-readable `{"response":"…"}` envelope for automation pipelines
+- **Model selection** — aliases `opus` (4.8), `sonnet` (4.6), `haiku` (4.5), `fable` (5), `best`, `opusplan`, `sonnet[1m]`, `opus[1m]`, or any full `claude-*` model ID
+- **JSON output** — machine-readable CLI JSON envelope; script prints the `.result` text field
 - **Sandbox mode** — runs code in Claude's sandboxed execution environment
 - **Timeout control** — wrapper-side `--timeout-ms` with exit code `124` on expiry
 - **Stdin support** — pipe large prompts from files or other commands (50 MB default limit)
@@ -124,15 +124,15 @@ The `PROMPT` argument is required unless you are piping input from stdin.
 
 ### Options
 
-| Option         | Short | Type                | Default    | Description                                                                                     |
-| -------------- | ----- | ------------------- | ---------- | ----------------------------------------------------------------------------------------------- |
-| `PROMPT`       | —     | string (positional) | required   | The question or task for Claude.                                                                |
-| `--model`      | `-m`  | string              | `opus`     | Model to use: `opus` (4.6), `sonnet` (4.5), `haiku` (4.5), or a full `claude-*` model ID.       |
-| `--json`       | —     | boolean             | `false`    | Return a JSON envelope `{"response":"…"}` instead of plain text.                                |
-| `--sandbox`    | —     | boolean             | `false`    | Execute code inside Claude's sandbox environment.                                               |
-| `--timeout-ms` | —     | integer             | `0` (none) | Abort after N milliseconds. Exit code `124` on timeout. Must be a positive integer.             |
-| `--help`       | `-h`  | boolean             | `false`    | Print usage and exit.                                                                           |
-| `--`           | —     | sentinel            | —          | Everything after `--` is treated as part of the prompt. Useful when the prompt starts with `-`. |
+| Option         | Short | Type                | Default     | Description                                                                                                                                                   |
+| -------------- | ----- | ------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PROMPT`       | —     | string (positional) | required    | The question or task for Claude.                                                                                                                              |
+| `--model`      | `-m`  | string              | CLI default | Model alias (`opus`, `sonnet`, `haiku`, `fable`, `best`, `opusplan`, `sonnet[1m]`, `opus[1m]`) or full `claude-*` ID. Omit to use your account's CLI default. |
+| `--json`       | —     | boolean             | `false`     | Return JSON from Claude CLI; script prints the `.result` text field.                                                                                          |
+| `--sandbox`    | —     | boolean             | `false`     | Execute code inside Claude's sandbox environment.                                                                                                             |
+| `--timeout-ms` | —     | integer             | `0` (none)  | Abort after N milliseconds. Exit code `124` on timeout. Must be a positive integer.                                                                           |
+| `--help`       | `-h`  | boolean             | `false`     | Print usage and exit.                                                                                                                                         |
+| `--`           | —     | sentinel            | —           | Everything after `--` is treated as part of the prompt. Useful when the prompt starts with `-`.                                                               |
 
 ### Input methods
 
@@ -181,15 +181,9 @@ claude -p "PROMPT" --dangerously-skip-permissions
 
 **Internal variable (do not set manually):**
 
-| Variable     | Description                                                                                                                                                                                                   |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `CLAUDECODE` | Set by the Claude Code CLI when running inside an active session. If present, `ask-claude.mjs` exits with an error because nested headless calls are not supported. Use the direct CLI pattern below instead. |
-
-**Nested-session workaround** — when `CLAUDECODE` is already set (i.e., you are inside a Claude Code session and want to call Claude headlessly), use the raw CLI directly:
-
-```bash
-env -u CLAUDECODE claude --dangerously-skip-permissions -p "YOUR PROMPT"
-```
+| Variable     | Description                                                                                                                                                      |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CLAUDECODE` | Set by the Claude Code CLI when running inside an active session. `ask-claude.mjs` strips this from the child process environment so nested headless calls work. |
 
 ---
 
@@ -239,10 +233,10 @@ Copilot CLI supports headless runs with `copilot -p "…"`. Use `COPILOT_MODEL` 
 
 ```bash
 # Use Claude as the Copilot backend
-COPILOT_MODEL="claude-sonnet-4.5" copilot -p "Review this function for bugs"
+COPILOT_MODEL="claude-sonnet-4-6" copilot -p "Review this function for bugs"
 
 # PowerShell
-$env:COPILOT_MODEL="claude-sonnet-4.5"; copilot -p "Review this function for bugs"
+$env:COPILOT_MODEL="claude-sonnet-4-6"; copilot -p "Review this function for bugs"
 ```
 
 See [references/copilot-cli.md](.claude/skills/omega-claude-cli/references/copilot-cli.md) for the full Copilot CLI reference.
@@ -356,32 +350,38 @@ node .claude/skills/omega-claude-cli/scripts/ask-claude.mjs \
 
 ### Model selection
 
-```bash
-# Opus (default) — most capable
-node .claude/skills/omega-claude-cli/scripts/ask-claude.mjs "Deep architectural analysis"
+Claude Code aliases always resolve to the latest version for your account. On the Anthropic API, `opus` → Opus 4.8, `sonnet` → Sonnet 4.6, `haiku` → Haiku 4.5, `fable` → Fable 5.
 
-# Sonnet — balanced speed and quality
+```bash
+# Opus — most capable (complex reasoning, architecture)
+node .claude/skills/omega-claude-cli/scripts/ask-claude.mjs "Deep architectural analysis" --model opus
+
+# Sonnet — balanced speed and quality (daily coding)
 node .claude/skills/omega-claude-cli/scripts/ask-claude.mjs "Summarize this PR diff" --model sonnet
 
 # Haiku — fastest, lowest cost
 node .claude/skills/omega-claude-cli/scripts/ask-claude.mjs "Tag this log line as error/warn/info" --model haiku
 
-# Full model ID
-node .claude/skills/omega-claude-cli/scripts/ask-claude.mjs "Explain this concept" --model claude-sonnet-4-5-20251022
+# Fable — long autonomous sessions
+node .claude/skills/omega-claude-cli/scripts/ask-claude.mjs "Investigate this flaky test end-to-end" --model fable
+
+# Extended context (1M tokens)
+node .claude/skills/omega-claude-cli/scripts/ask-claude.mjs "Analyze this large codebase" --model sonnet[1m]
+
+# Pinned model ID
+node .claude/skills/omega-claude-cli/scripts/ask-claude.mjs "Explain this concept" --model claude-sonnet-4-6
 ```
 
 ### JSON output for automation
 
 ```bash
-# Returns {"response":"..."}
+# Returns the CLI result text (parsed from .result)
 node .claude/skills/omega-claude-cli/scripts/ask-claude.mjs \
   "Extract all function names from this file" \
   --json
 
-# Parse with jq
-node .claude/skills/omega-claude-cli/scripts/ask-claude.mjs \
-  "Summarize in one sentence" \
-  --json | jq -r '.response'
+# Parse with jq from the raw CLI envelope
+claude -p "Summarize in one sentence" --output-format json --dangerously-skip-permissions | jq -r '.result'
 ```
 
 ### Stdin input
@@ -500,10 +500,6 @@ Every pull request must add at least one entry under `## [Unreleased]` in `CHANG
 ```bash
 npm run changelog:check
 ```
-
-### GitHub Actions
-
-The CI workflow runs on push and pull requests against Node.js **20**.
 
 ---
 

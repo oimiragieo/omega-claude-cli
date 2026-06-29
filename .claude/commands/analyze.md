@@ -11,7 +11,7 @@ Use the **headless Claude Code CLI script** to analyze or answer with Claude. No
    ```bash
    node .claude/skills/omega-claude-cli/scripts/ask-claude.mjs "PROMPT"
    ```
-   Replace `PROMPT` with the full analysis request. Optionally add `--model sonnet` or `--model haiku` (CLI has 3 models: Default/Opus 4.6, Sonnet 4.5, Haiku 4.5).
+   Replace `PROMPT` with the full analysis request. Optionally add `--model sonnet`, `--model haiku`, `--model fable`, etc. (aliases: `opus`, `sonnet`, `haiku`, `fable`, `best`, `opusplan`, `sonnet[1m]`, `opus[1m]`).
 3. Return the script's stdout as Claude's response to the user.
 
 If no argument was given, ask the user what they want Claude to analyze or answer.

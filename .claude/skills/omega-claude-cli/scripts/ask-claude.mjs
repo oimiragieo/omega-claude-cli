@@ -28,7 +28,7 @@ const EFFECTIVE_MAX_STDIN_BYTES =
  * via stdin instead of being passed as a CLI argument.  This avoids the ~8 KB
  * command-line length limit on Windows (cmd.exe) and similar OS limits.
  */
-const PROMPT_ARG_BYTE_LIMIT = 6 * 1024;
+export const PROMPT_ARG_BYTE_LIMIT = 6 * 1024;
 
 export function buildClaudeArgs({ prompt, model, outputJson, sandbox }) {
   // Required for non-interactive/headless execution.
@@ -37,6 +37,12 @@ export function buildClaudeArgs({ prompt, model, outputJson, sandbox }) {
   if (model) cliArgs.push('--model', model);
   if (outputJson) cliArgs.push('--output-format', 'json');
   return cliArgs;
+}
+
+export function buildChildEnv(env = process.env) {
+  const childEnv = { ...env };
+  delete childEnv.CLAUDECODE;
+  return childEnv;
 }
 
 export function getExecutables(cliArgs, isWin) {
@@ -64,8 +70,11 @@ function runCandidate(candidate, runOptions, timeoutMs, stdinFile) {
   return new Promise((resolve) => {
     let proc;
     try {
-      const spawnOpts =
-        process.platform === 'win32' ? runOptions : { ...runOptions, detached: true };
+      const spawnOpts = {
+        ...runOptions,
+        env: buildChildEnv(runOptions.env),
+        ...(process.platform === 'win32' ? {} : { detached: true }),
+      };
       proc = spawn(candidate.executable, candidate.args, spawnOpts);
     } catch (err) {
       if (err && (err.code === 'ENOENT' || err.code === 'EINVAL')) {
@@ -208,7 +217,7 @@ function printFailure(stderr, stdout, timedOut) {
  * Write prompt to a temp file and return { tmpDir, tmpFile } so the caller
  * can clean up.  Returns null when the prompt fits in a CLI argument.
  */
-function maybeMaterializePrompt(promptText) {
+export function maybeMaterializePrompt(promptText) {
   if (Buffer.byteLength(promptText, 'utf8') <= PROMPT_ARG_BYTE_LIMIT) {
     return null;
   }
@@ -265,6 +274,7 @@ async function run(promptText, opts) {
     const runOptions = {
       stdio: [materialized ? 'pipe' : 'ignore', 'pipe', 'pipe'],
       shell: false,
+      env: process.env,
     };
     const candidates = getExecutables(cliArgs, process.platform === 'win32');
     const result = await runWithFallback(
