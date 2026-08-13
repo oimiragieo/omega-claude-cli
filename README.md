@@ -28,7 +28,7 @@ A zero-dependency Node.js wrapper that lets any agent platform invoke **Claude C
 - **Headless execution** — runs `claude -p "…" --dangerously-skip-permissions` non-interactively
 - **Cross-platform** — Windows (`cmd.exe` wrapper) and Unix/macOS (direct spawn) handled automatically
 - **Automatic fallback** — tries global `claude` binary, falls back to `npx @anthropic-ai/claude-code` if not found
-- **Model selection** — aliases `opus` (4.8), `sonnet` (4.6), `haiku` (4.5), `fable` (5), `best`, `opusplan`, `sonnet[1m]`, `opus[1m]`, or any full `claude-*` model ID
+- **Model selection** — aliases `opus` (5), `sonnet` (5), `haiku` (4.5), `fable` (5), `best`, `opusplan`, `sonnet[1m]`, `opus[1m]`, or any full `claude-*` model ID
 - **JSON output** — machine-readable CLI JSON envelope; script prints the `.result` text field
 - **Sandbox mode** — runs code in Claude's sandboxed execution environment
 - **Timeout control** — wrapper-side `--timeout-ms` with exit code `124` on expiry
@@ -233,10 +233,11 @@ Copilot CLI supports headless runs with `copilot -p "…"`. Use `COPILOT_MODEL` 
 
 ```bash
 # Use Claude as the Copilot backend
-COPILOT_MODEL="claude-sonnet-4-6" copilot -p "Review this function for bugs"
+# Use Claude as the Copilot backend (model strings from `copilot help`; dotted IDs)
+COPILOT_MODEL="claude-sonnet-4.6" copilot -p "Review this function for bugs"
 
 # PowerShell
-$env:COPILOT_MODEL="claude-sonnet-4-6"; copilot -p "Review this function for bugs"
+$env:COPILOT_MODEL="claude-sonnet-4.6"; copilot -p "Review this function for bugs"
 ```
 
 See [references/copilot-cli.md](.claude/skills/omega-claude-cli/references/copilot-cli.md) for the full Copilot CLI reference.
@@ -350,7 +351,7 @@ node .claude/skills/omega-claude-cli/scripts/ask-claude.mjs \
 
 ### Model selection
 
-Claude Code aliases always resolve to the latest version for your account. On the Anthropic API, `opus` → Opus 4.8, `sonnet` → Sonnet 4.6, `haiku` → Haiku 4.5, `fable` → Fable 5.
+Claude Code aliases always resolve to the latest version for your provider. On the Anthropic API (as of Aug 2026), `opus` → Opus 5, `sonnet` → Sonnet 5, `haiku` → Haiku 4.5, `fable` → Fable 5. Other providers may resolve `opus`/`sonnet` to older versions; see [Model configuration](https://code.claude.com/docs/en/model-config).
 
 ```bash
 # Opus — most capable (complex reasoning, architecture)
@@ -369,7 +370,7 @@ node .claude/skills/omega-claude-cli/scripts/ask-claude.mjs "Investigate this fl
 node .claude/skills/omega-claude-cli/scripts/ask-claude.mjs "Analyze this large codebase" --model sonnet[1m]
 
 # Pinned model ID
-node .claude/skills/omega-claude-cli/scripts/ask-claude.mjs "Explain this concept" --model claude-sonnet-4-6
+node .claude/skills/omega-claude-cli/scripts/ask-claude.mjs "Explain this concept" --model claude-sonnet-5
 ```
 
 ### JSON output for automation

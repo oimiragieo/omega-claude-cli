@@ -28,7 +28,7 @@ node .claude/skills/omega-claude-cli/scripts/ask-claude.mjs "USER_PROMPT"
 
 Options (append to the command):
 
-- `--model MODEL` — optional. CLI aliases: `opus` (4.8), `sonnet` (4.6), `haiku` (4.5), `fable` (5), `best`, `opusplan`, `sonnet[1m]`, `opus[1m]`, or a full `claude-*` model ID. Omit to use your account's CLI default.
+- `--model MODEL` — optional. CLI aliases: `opus` (5), `sonnet` (5), `haiku` (4.5), `fable` (5), `best`, `opusplan`, `sonnet[1m]`, `opus[1m]`, or a full `claude-*` model ID. Omit to use your account's CLI default. (Anthropic API resolutions; other providers may differ — see [model-config](https://code.claude.com/docs/en/model-config).)
 - `--json` — output JSON from Claude CLI; the script prints the `.result` text field.
 - `--sandbox` — run or test code in Claude's sandbox mode.
 - `--timeout-ms N` — optional timeout for automation.

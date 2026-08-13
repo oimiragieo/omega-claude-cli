@@ -32,7 +32,7 @@ The script runs `claude` if it's on your PATH; if not, it can fall back to `npx 
 
 Options:
 
-- `--model MODEL` — optional. CLI aliases: **opus** (4.8), **sonnet** (4.6), **haiku** (4.5), **fable** (5), **best**, **opusplan**, **sonnet[1m]**, **opus[1m]**, or a full `claude-*` model ID. Omit to use your account's CLI default.
+- `--model MODEL` — optional. CLI aliases: **opus** (5), **sonnet** (5), **haiku** (4.5), **fable** (5), **best**, **opusplan**, **sonnet[1m]**, **opus[1m]**, or a full `claude-*` model ID. Omit to use your account's CLI default. (Anthropic API resolutions as of Aug 2026; other providers may differ.)
 - `--json` — output as JSON; script prints the `.result` text field from the CLI envelope
 - `--sandbox` — run the prompt in Claude sandbox mode
 - `--timeout-ms N` — fail fast in automation if Claude takes too long

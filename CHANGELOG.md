@@ -2,12 +2,13 @@
 
 ## [Unreleased]
 
+- **Docs accuracy (Exa-verified Aug 2026)**: Corrected Anthropic API alias resolutions to Opus 5 / Sonnet 5 / Haiku 4.5 / Fable 5 (were incorrectly listed as Opus 4.8 / Sonnet 4.6). Refreshed `CLAUDE_CLI_DOCS/MODEL-CONFIG.md` and `HEADLESS.md` from live docs; fixed Copilot CLI model ID examples to GitHub's dotted format (`claude-sonnet-4.6`).
 - **JSON output**: `format-output.mjs` now reads the Claude CLI `.result` field (current envelope) with legacy `.response` fallback.
 - **Model aliases**: `parse-args.mjs` accepts `fable`, `best`, `opusplan`, `default`, `sonnet[1m]`, `opus[1m]`, and `claude-fable-*` model IDs.
 - **Nested sessions**: `ask-claude.mjs` strips `CLAUDECODE` from the child process environment so headless calls work from inside Claude Code.
-- **Docs**: Updated README, skill, headless reference, Cursor rules, and slash commands for current model aliases (Opus 4.8, Sonnet 4.6, Fable 5).
+- **Docs**: Updated README, skill, headless reference, Cursor rules, and slash commands for current model aliases.
 - **Tests**: Integration stubs use real CLI JSON shape; added coverage for new aliases, large prompts, and `CLAUDECODE` stripping.
-- **CLAUDE_CLI_DOCS**: Added snapshot README pointing to live docs for model/CLI truth.
+- **CLAUDE_CLI_DOCS**: Snapshot README points to live docs for model/CLI truth.
 
 - **Code cleanup**: Removed `shell-escape.mjs` and `tests/shell-escape.test.mjs` — dead code never imported by `ask-claude.mjs`.
 - **New scripts**: `parse-args.mjs` (pure arg parser, exported for testing) and `format-output.mjs` (pure JSON extractor, exported for testing). Both split from `ask-claude.mjs` to enable isolated unit testing without spawning processes.
